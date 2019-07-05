@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace App.Data.Infrastructure
@@ -19,18 +18,6 @@ namespace App.Data.Infrastructure
             _context = context;
             dbset = _context.GetCollection<T>(typeof(T).Name);
         }
-
-        public virtual T Add(T entity)
-        {
-            _context.AddCommand(() => dbset.InsertOneAsync(entity));
-            return entity;
-        }
-
-        public virtual void Delete(T entity)
-        {
-            _context.AddCommand(() => dbset.DeleteOneAsync(Builders<T>.Filter.Eq("_id", entity.GetId())));
-        }
-
         public virtual async Task<IEnumerable<T>> GetAll()
         {
             var result = await dbset.FindAsync(Builders<T>.Filter.Empty);
@@ -38,12 +25,29 @@ namespace App.Data.Infrastructure
         }
         public virtual async Task<T> GetById(Guid id)
         {
-            var result = await dbset.FindAsync(Builders<T>.Filter.Eq("_id",id));
+            var result = await dbset.FindAsync(Builders<T>.Filter.Eq("_id", id));
             return result.SingleOrDefault();
+        }
+
+        public virtual T Add(T entity)
+        {
+            _context.AddCommand(() => dbset.InsertOneAsync(entity));
+            return entity;
         }
         public virtual void Update(T entity)
         {
             _context.AddCommand(() => dbset.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", entity.GetId()), entity));
+        }
+
+        public virtual void Delete(Guid id)
+        {
+            _context.AddCommand(() => dbset.DeleteOneAsync(Builders<T>.Filter.Eq("_id", id)));
+        }      
+
+        public async Task<IEnumerable<T>> GetByFilter(FilterDefinition<T> filter)
+        {
+            var result = await dbset.FindAsync(filter);
+            return result.ToList();
         }
     }
 }

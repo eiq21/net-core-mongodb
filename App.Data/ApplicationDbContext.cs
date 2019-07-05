@@ -14,6 +14,7 @@ namespace App.Data
         private IMongoDatabase Database { get; set; }
         private readonly List<Func<Task>> _commands;
         public ApplicationDbContext(IOptions<Settings> options)
+            :base()
         {
             var client = new MongoClient(options.Value.ConnectionString);
             if (client != null)
