@@ -1,49 +1,72 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
 using ServiceStack;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace App.Data.Infrastructure
 {
-    public abstract class RepositoryBase<T> :IRepository<T> where T:class
+    public abstract class RepositoryBase<T> : IRepository<T> where T : class
     {
-        protected readonly IMongoContext _context;
-        protected readonly IMongoCollection<T> dbset;
-
-        protected RepositoryBase(IMongoContext context)
+        private readonly IApplicationDbContext _context;
+        private readonly IMongoCollection<T> DbSet;
+        public RepositoryBase(IApplicationDbContext context)
         {
             _context = context;
-            dbset = _context.GetCollection<T>(typeof(T).Name);
+            DbSet = _context.GetCollection<T>(typeof(T).Name);
+            
         }
-
-        public virtual T Add(T entity)
+        public void Add(T obj)
         {
-            _context.AddCommand(() => dbset.InsertOneAsync(entity));
-            return entity;
+            _context.AddCommand(() => DbSet.InsertOneAsync(obj));
         }
-
-        public virtual void Delete(T entity)
-        {
-            _context.AddCommand(() => dbset.DeleteOneAsync(Builders<T>.Filter.Eq("_id", entity.GetId())));
-        }
-
         public virtual async Task<IEnumerable<T>> GetAll()
         {
-            var result = await dbset.FindAsync(Builders<T>.Filter.Empty);
-            return result.ToList();
+            var all = await DbSet.FindAsync(Builders<T>.Filter.Empty);
+            return all.ToList();
         }
+
         public virtual async Task<T> GetById(Guid id)
         {
-            var result = await dbset.FindAsync(Builders<T>.Filter.Eq("_id",id));
-            return result.SingleOrDefault();
+            var data = await DbSet.FindAsync(Builders<T>.Filter.Eq("_id", id));
+            return data.FirstOrDefault();
         }
-        public virtual void Update(T entity)
+
+        public virtual async Task<T> GetById(ObjectId id)
         {
-            _context.AddCommand(() => dbset.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", entity.GetId()), entity));
+            var data = await DbSet.FindAsync(Builders<T>.Filter.Eq("_id", id));
+            return data.FirstOrDefault();
+        }
+
+        public void Remove(Guid id) => _context.AddCommand(() => DbSet.DeleteOneAsync(Builders<T>.Filter.Eq("_id", id)));
+
+        public void Remove(ObjectId id) => _context.AddCommand(() => DbSet.DeleteOneAsync(Builders<T>.Filter.Eq("_id", id)));
+
+
+        public virtual void Update(T obj)
+        {
+            _context.AddCommand(() => DbSet.ReplaceOneAsync(Builders<T>.Filter.Eq("_id", obj.GetId()), obj));
+        }
+        public void Dispose()
+        {
+            _context?.Dispose();
+        }
+
+        public  virtual async Task<IEnumerable<T>> GetByFilter(FilterDefinition<T> filter)
+        {
+            filter = filter ?? new BsonDocument();
+            var list =  await DbSet.FindAsync(filter);
+            return list.ToList();
+
+        }
+
+        public virtual async Task<T> GetFirstByFilter(FilterDefinition<T> filter)
+        {
+            filter = filter ?? new BsonDocument();
+            var obj = await DbSet.FindAsync(filter);
+            return obj.FirstOrDefault();
         }
     }
 }

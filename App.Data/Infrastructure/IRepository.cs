@@ -1,24 +1,22 @@
-﻿using System;
+﻿using MongoDB.Bson;
+using MongoDB.Driver;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace App.Data.Infrastructure
 {
-    public interface IRepository<T> where T : class
+    public interface IRepository<T> :IDisposable where T:class 
     {
-        Task<T>  GetById(Guid id);
+        void Add(T obj);
+        Task<T> GetById(Guid id);
+        Task<T> GetById(ObjectId id);
         Task<IEnumerable<T>> GetAll();
-        //Task<IEnumerable<T>> GetMany(Expression<Func<T, bool>> where);
-        T Add(T entity);
-
-        void Update(T entity);
-
-        void Delete(T entity);
-
-        //IQueryable<T> Query(Expression<Func<T, bool>> where);
-
+        void Update(T obj);
+        void Remove(Guid id);
+        void Remove(ObjectId id);
+        Task<IEnumerable<T>> GetByFilter(FilterDefinition<T> filter);
+        Task<T> GetFirstByFilter(FilterDefinition<T> filter);
     }
 }
