@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using App.API.ViewModel;
+﻿using System.Threading.Tasks;
+using App.API.Filters;
+using App.API.ViewModel.User;
+using App.Model;
 using App.Service;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace App.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UserController : ControllerBase
@@ -23,7 +23,8 @@ namespace App.API.Controllers
 
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public async Task<IActionResult> Authenticate([FromBody]UserViewModel userVM)
+        [ValidateModel]
+        public async Task<IActionResult> Authenticate([FromBody]LoginViewModel userVM)
         {
             var user = await _userService.Authenticate(userVM.Username, userVM.Password);
 
@@ -31,6 +32,16 @@ namespace App.API.Controllers
                 return BadRequest(new { message = "Username or password is incorrect" });
 
             return Ok(user);
+        }
+
+        [HttpPost("register")]
+        [ValidateModel]
+        public async Task<IActionResult> Register([FromBody] RegisterViewModel userVM) {
+           var user = new User();
+            Mapper.Map(userVM, user);
+            await _userService.Register(user);
+            Mapper.Map(user, userVM);
+            return Created(Url.Link("Default", new { controller = "User", id = user.Id.ToString() }), userVM);
         }
 
         [HttpGet]

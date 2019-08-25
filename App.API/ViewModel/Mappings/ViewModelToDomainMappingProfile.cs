@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using App.API.ViewModel.User;
 
 namespace App.API.ViewModels.Mappings
 {
@@ -17,6 +18,9 @@ namespace App.API.ViewModels.Mappings
               .ForMember(s => s.CategoryName, map =>
                   map.MapFrom(vm => vm.Name))
               .ForMember(s => s.CategoryDescription, map => map.MapFrom(vm => vm.Description));
+
+            CreateMap<RegisterViewModel,User>();
+            CreateMap<LoginViewModel, User>();
         }
     }
 }

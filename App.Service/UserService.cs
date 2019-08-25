@@ -1,4 +1,6 @@
-﻿using App.Data.Infrastructure;
+﻿using App.Common.Exceptions;
+using App.Common.Helpers;
+using App.Data.Infrastructure;
 using App.Data.Repositories;
 using App.Model;
 using Microsoft.Extensions.Options;
@@ -25,12 +27,17 @@ namespace App.Service
             _unitOfWork = unitOfWork;
             _options = options;
         }
+
         public async Task<User> Authenticate(string username, string password)
         {
-            var filter = new ExpressionFilterDefinition<User>(u => u.Username == username && u.Password == password);
+            var filter = new ExpressionFilterDefinition<User>(u => u.Username == username);
             var user = await _repository.GetFirstByFilter(filter);
             if (user == null)
-                return null;
+                throw new BadRequestException("usernama/password aren't rigth");
+
+            if (string.IsNullOrWhiteSpace(password) || !user.Password.VerifyWithBCrypt(password))
+                throw new BadRequestException("usernama/password aren't rigth");
+
             // authentication successful so generate jwt token
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_options.Value.Secret);
@@ -52,9 +59,26 @@ namespace App.Service
             return user;
         }
 
+       
+
         public async Task<IEnumerable<User>> GetUsers()
         {
             return await _repository.GetAll();
+        }
+
+        public async Task<User> Register(User user)
+        {
+            var username = user.Username.Trim();
+            var filter = new ExpressionFilterDefinition<User>(u => u.Username == username);
+            var valid = await _repository.GetFirstByFilter(filter);
+            if (valid != null)
+                throw new BadRequestException("The username is already in use");
+
+            string password = user.Password.Trim().WithBCrypt();
+            user.Password = password;
+            _repository.Add(user);
+            await _unitOfWork.Commit();
+            return user;                                  
         }
     }
 
@@ -62,5 +86,6 @@ namespace App.Service
     {
         Task<User> Authenticate(string username, string password);
         Task<IEnumerable<User>> GetUsers();
+        Task<User> Register(User user);
     }
 }

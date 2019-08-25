@@ -1,11 +1,11 @@
-﻿using App.API.ViewModels.Mappings;
+﻿using App.API.Filters;
+using App.API.ViewModels.Mappings;
 using App.Data;
 using App.Data.Configurations;
 using App.Data.Infrastructure;
 using App.Data.Repositories;
 using App.Model;
 using App.Service;
-using AutoMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -30,7 +30,7 @@ namespace App.API
        
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc(options => options.Filters.Add(new ApiExceptionFilter())).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             services.AddCors();
             MongoDbPersistence.Configure();
             AutoMapperConfiguracion.Configure();
@@ -60,6 +60,8 @@ namespace App.API
                     ValidateAudience = false
                 };
             });
+
+            
 
         }
 
