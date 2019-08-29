@@ -27,17 +27,15 @@ namespace App.API.Controllers
         public async Task<IActionResult> Authenticate([FromBody]LoginViewModel userVM)
         {
             var user = await _userService.Authenticate(userVM.Username, userVM.Password);
-
-            if (user == null)
-                return BadRequest(new { message = "Username or password is incorrect" });
-
             return Ok(user);
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
         [ValidateModel]
-        public async Task<IActionResult> Register([FromBody] RegisterViewModel userVM) {
-           var user = new User();
+        public async Task<IActionResult> Register([FromBody] RegisterViewModel userVM)
+        {
+            var user = new User();
             Mapper.Map(userVM, user);
             await _userService.Register(user);
             Mapper.Map(user, userVM);

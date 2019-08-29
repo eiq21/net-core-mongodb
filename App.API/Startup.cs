@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Swashbuckle.AspNetCore.Swagger;
 using System.Text;
 
 namespace App.API
@@ -27,10 +28,21 @@ namespace App.API
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
-       
+
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc(options => options.Filters.Add(new ApiExceptionFilter())).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info
+                {
+                    Version = "v1",
+                    Title = "API Net Core",
+                    Description = "My ASP.NET Core Web API",
+                    TermsOfService = "None",
+                    Contact = new Contact() { Name = "Enrique Inca Q.", Email = "inca.quispe.e@gmail.com", Url = "" }
+                });
+            });
             services.AddCors();
             MongoDbPersistence.Configure();
             AutoMapperConfiguracion.Configure();
@@ -61,7 +73,7 @@ namespace App.API
                 };
             });
 
-            
+
 
         }
 
@@ -86,15 +98,22 @@ namespace App.API
             app.UseAuthentication();
 
             app.UseHttpsRedirection();
-            app.UseMvc(routes => {
+            app.UseMvc(routes =>
+            {
                 routes.MapRoute(
                      name: "default",
                      template: "{controller=Default}/{action=Index}/{id?}"
                      );
             });
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "API V1");
+            });
         }
 
-        private void RegisterServices(IServiceCollection services) {
+        private void RegisterServices(IServiceCollection services)
+        {
             services.AddScoped<IApplicationDbContext, ApplicationDbContext>();
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
